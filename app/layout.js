@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Provider from "./provider";
+import { ClerkProvider } from "@clerk/nextjs";
 
 // Load Google Fonts
 const geistSans = Geist({
@@ -21,6 +22,7 @@ export const metadata = {
 // Root layout
 export default function RootLayout({ children }) {
   return (
+    <ClerkProvider>
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
@@ -29,5 +31,6 @@ export default function RootLayout({ children }) {
         <Provider>{children}</Provider>
       </body>
     </html>
+    </ClerkProvider>
   );
 }
