@@ -10,12 +10,15 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, User2, Settings, Bolt, Zap } from "lucide-react";
 import { useTheme } from "next-themes";
+import { SignInButton, useUser } from "@clerk/nextjs";
+import UsageCreditProgress from "./UsageCreditProgress";
 
 
 export function AppSidebar() {
   const { theme, setTheme } = useTheme();
+  const {user}=useUser();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
     setMounted(true);
@@ -37,20 +40,33 @@ export function AppSidebar() {
               )}
             </div>
           </div>
-          <Button className='mt-7 w-full' size="lg">+ New Chat</Button>
+          {user?
+            <Button className='mt-7 w-full' size="lg">+ New Chat</Button>
+          : <SignInButton><Button className='mt-7 w-full' size="lg">+ New Chat</Button></SignInButton>}
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup >
           <div className={"p-3"}>
             <h2 className="font-bold text-lg">Chats</h2>
-            <p className="text-sm text-gray-500">List of chat will be displayed here</p>
+            {!user && <p className="text-sm text-gray-500">Sign in to start chatting with multiple AI models</p>}
           </div>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <div className="p-3 mb-5">
+          {!user?<SignInButton mode="modal">
           <Button className={'w-full'} size={'lg'}>Sign In/Sign Up</Button>
+          </SignInButton>
+          :
+          <div>
+            <UsageCreditProgress />
+            <Button className="w-full mb-3" ><Zap />Upgrade plan</Button>
+          <Button className="flex " variant={'ghost'}>
+            <User2 /><h2>Settings</h2>
+          </Button>
+        </div>  
+}
         </div>
       </SidebarFooter>
     </Sidebar>
