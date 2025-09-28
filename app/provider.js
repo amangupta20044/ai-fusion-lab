@@ -9,6 +9,7 @@ import { db } from '@/config/FirebaseConfig';
 import { getDoc, doc, setDoc } from 'firebase/firestore';
 import { AiSelectedModelContext } from '@/context/AiSelectedModelContext';
 import { DefaultModel } from '@/shared/AiModelsShared';
+import { UserDetailContext } from '@/context/UserDetailContext';
 
 
 function Provider({ children, ...props }) {
@@ -16,7 +17,7 @@ function Provider({ children, ...props }) {
   const {user}=useUser();
 
   const [aiSelecteModels,setAiSelectedModels]=useState(DefaultModel)
-
+  const[userDetails,setUserDetails]=useState();
   useEffect(()=>{
     if(user){
       CreateNewuser();
@@ -31,6 +32,7 @@ function Provider({ children, ...props }) {
       console.log("Existing user");
       const userInfo=userSnap.data();
       setAiSelectedModels(userInfo?.aiSelectedModelPref);
+      setUserDetails(userInfo);
       return;
     } else {
       const userData = {
@@ -55,6 +57,7 @@ function Provider({ children, ...props }) {
       enableSystem
       disableTransitionOnChange
     >
+      <UserDetailContext.Provider value={{userDetails,setUserDetails}}>
       <AiSelectedModelContext.Provider value={{aiSelecteModels,setAiSelectedModels}}>
       <SidebarProvider>
         <AppSidebar />
@@ -63,6 +66,7 @@ function Provider({ children, ...props }) {
         </div>
       </SidebarProvider>
       </AiSelectedModelContext.Provider>
+      </UserDetailContext.Provider>
     </NextThemesProvider>
     
   );
