@@ -18,6 +18,7 @@ function Provider({ children, ...props }) {
 
   const [aiSelecteModels,setAiSelectedModels]=useState(DefaultModel)
   const[userDetails,setUserDetails]=useState();
+  const [messages,setMessages]=useState({});
   useEffect(()=>{
     if(user){
       CreateNewuser();
@@ -31,7 +32,7 @@ function Provider({ children, ...props }) {
     if (userSnap.exists()) {
       console.log("Existing user");
       const userInfo=userSnap.data();
-      setAiSelectedModels(userInfo?.aiSelectedModelPref);
+      setAiSelectedModels(userInfo?.aiSelectedModelPref??DefaultModel);
       setUserDetails(userInfo);
       return;
     } else {
@@ -58,7 +59,7 @@ function Provider({ children, ...props }) {
       disableTransitionOnChange
     >
       <UserDetailContext.Provider value={{userDetails,setUserDetails}}>
-      <AiSelectedModelContext.Provider value={{aiSelecteModels,setAiSelectedModels}}>
+      <AiSelectedModelContext.Provider value={{aiSelecteModels,setAiSelectedModels,messages,setMessages}}>
       <SidebarProvider>
         <AppSidebar />
         <div className='w-full'>
