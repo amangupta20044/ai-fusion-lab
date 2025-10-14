@@ -19,23 +19,33 @@ import { useUser } from '@clerk/nextjs'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '@/config/FirebaseConfig'
 
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+
 function AiMultiModels() {
   const { user } = useUser();
   const [aiModelList, setAiModelList] = useState(AiModelList);
-  const { aiSelecteModels, setAiSelectedModels } = useContext(AiSelectedModelContext);
+  const { aiSelectedModels, setAiSelectedModels, messages, setMessages } = useContext(AiSelectedModelContext);
 
   const onToggleChange = (model, value) => {
-    setAiModelList(prev =>
-      prev.map(m =>
-        m.model === model ? { ...m, enable: value } : m
-      )
-    );
+    // Update local list state
+    setAiModelList(prev => prev.map(m => (m.model === model ? { ...m, enable: value } : m)));
+
+    // Update selected models in context (ensure object shape)
+    setAiSelectedModels(prev => ({
+      ...(prev ?? {}),
+      [model]: {
+        ...(prev?.[model] ?? {}),
+        enable: value,
+      },
+    }));
   };
 
   const onSelectValue = async (parentModel, value) => {
     setAiSelectedModels(prev => ({
-      ...prev,
+      ...(prev ?? {}),
       [parentModel]: {
+        ...(prev?.[parentModel] ?? {}),
         modelId: value,
       },
     }));
@@ -44,7 +54,7 @@ function AiMultiModels() {
       const docRef = doc(db, "users", user.primaryEmailAddress.emailAddress);
       await updateDoc(docRef, {
         aiSelectedModelPref: {
-          ...aiSelecteModels,
+          ...(aiSelectedModels ?? {}),
           [parentModel]: { modelId: value },
         },
       });
@@ -71,51 +81,45 @@ function AiMultiModels() {
 
               {module.enable && (
                 <Select
-                  defaultValue={aiSelecteModels?.[module.model]?.modelId ?? ""}
+                  defaultValue={aiSelectedModels?.[module.model]?.modelId ?? ""}
                   onValueChange={value => onSelectValue(module.model, value)}
                   disabled={module.premium}
                 >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue
-                      placeholder={
-                        aiSelecteModels?.[module.model]?.modelId ??
-                        "Select model"
-                      }
-                    />
-                  </SelectTrigger>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue
+                        placeholder={
+                          aiSelectedModels?.[module.model]?.modelId ??
+                          "Select model"
+                        }
+                      />
+                    </SelectTrigger>
 
                   <SelectContent>
                     <SelectGroup className="px-3">
                       <SelectLabel className="text-sm text-gray-400">
                         Free
                       </SelectLabel>
-                      {module.subModel.map(
-                        (subModel, idx) =>
-                          !subModel.premium && (
-                            <SelectItem key={idx} value={subModel.name}>
-                              {subModel.name}
-                            </SelectItem>
-                          )
-                      )}
+                      {module.subModel
+                        .filter(subModel => !subModel.premium)
+                        .map((subModel) => (
+                          <SelectItem key={subModel.id ?? subModel.name} value={subModel.name}>
+                            {subModel.name}
+                          </SelectItem>
+                        ))}
                     </SelectGroup>
 
                     <SelectGroup className="px-3">
                       <SelectLabel className="text-sm text-gray-400">
                         Premium
                       </SelectLabel>
-                      {module.subModel.map(
-                        (subModel, idx) =>
-                          subModel.premium && (
-                            <SelectItem
-                              key={idx}
-                              value={subModel.name}
-                              disabled
-                            >
-                              {subModel.name}
-                              <Lock className="h-4 w-4 ml-1" />
-                            </SelectItem>
-                          )
-                      )}
+                      {module.subModel
+                        .filter(subModel => subModel.premium)
+                        .map((subModel) => (
+                          <SelectItem key={subModel.id ?? subModel.name} value={subModel.name} disabled>
+                            {subModel.name}
+                            <Lock className="h-4 w-4 ml-1" />
+                          </SelectItem>
+                        ))}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -143,6 +147,33 @@ function AiMultiModels() {
               </Button>
             </div>
           )}
+
+            {module.enable && (
+              <div className='flex-1 p-4'>
+                <div className='flex-1 p-4 space-y-2'>
+                  {messages?.[module.model]?.map((m, i) => (
+                    <div
+                      key={i}
+                      className={`p-2 rounded-md ${m.role == 'user' ?
+                        "bg-blue-100 text-blue-900"
+                        : "bg-gray-100 text-gray-900"}`}>
+                      {m.role == 'assistant' && (
+                        <span className='text-sm text-gray-400'>{m.model ?? module.model}</span>
+                      )}
+                      <div className='flex gap-3 items-center'>
+                        {m.content && <span className='text-sm text-gray-500 animate-pulse'>thinking...</span>}
+                      </div>
+                      {!m.content && 
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {m.content}
+                      </ReactMarkdown>
+                        }
+                      
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
       ))}
     </div>
